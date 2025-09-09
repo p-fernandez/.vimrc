@@ -10,7 +10,7 @@ set cursorline
 set directory=$HOME/.vim/swp// " No annoying swap files in the projects. This absolute link them to reference them inside said directory.
 set encoding=utf8
 set fileencoding=utf8
-set guicursor=n-c-v:block-nCursor
+set guicursor=n-c-v:block
 set hidden " keep buffers open
 set history=50 " keep 50 lines of command line history
 set hlsearch " Hilight searching
@@ -23,7 +23,6 @@ set noshowcmd		" display incomplete commands
 set nospell " Disables spelling checking
 set nowrap
 set number " Sets number of the line.
-set path+=** " Makes search find recursive
 set ruler " show the cursor position all the time
 set scrolloff=8
 set signcolumn=yes
@@ -32,10 +31,9 @@ set softtabstop=2 shiftwidth=2 expandtab " Convert tab into spaces
 set t_Co=256
 set termencoding=utf-8
 set title " Turn on setting the title.
-set ttimeout		" time out for key codes
-set ttimeoutlen=100	" wait up to 100ms after Esc for special key
-set wildignore+=**/node_modules/** " folders to ignore when using :find
-set wildmode=full wildmenu		" display completion matches in a status line
+set ttimeout " time out for key codes
+set ttimeoutlen=100 " wait up to 100ms after Esc for special key
+set wildmode=full wildmenu " display completion matches in a status line
 
 " https://youtu.be/XA2WjJbmmoM?t=368
 syntax enable
@@ -48,9 +46,11 @@ filetype plugin on
 
 " Relative numbers only in Normal Mode.
 augroup toggle_relative_number
-autocmd InsertEnter * :setlocal norelativenumber
-autocmd InsertLeave * :setlocal relativenumber
- 
+  autocmd!
+  autocmd InsertEnter * :setlocal norelativenumber
+  autocmd InsertLeave * :setlocal relativenumber
+augroup END
+
 " Create tags
 command! MakeTags !ctags -R .
 
@@ -137,8 +137,12 @@ aug END
 " Modify readonly files from Vim
 cnoremap w!! w !sudo tee > /dev/null %
 
+" Detect GLSL files
+au BufNewFile,BufRead *.vert,*.frag,*.tesc,*.tese,*.geom,*.comp,*.glsl,*.vs,*.fs set filetype=glsl
+
 " Source the vimrc file after saving it
-autocmd! BufWritePost $MYVIMRC source $MYVIMRC | echom "Reloaded $MYVIMRC"
+autocmd! BufWritePost $MYVIMRC if expand('%') ==# fnamemodify($MYVIMRC, ':t') | 
+      \ source $MYVIMRC | echom "Reloaded " . $MYVIMRC | endif
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Improve Vim's Command Line Autocompletion
@@ -235,14 +239,18 @@ let g:vim_json_syntax_conceal = 0
 " VIM-JDADDY "
 """"""""""""""
 
-function! JsonParse ()
-  call feedkeys("gqaj")  
+function! JsonParse()
+  if exists(':Jdaddy')
+    call feedkeys("gqaj")  
+  endif
 endfunction
 
 command! JsonParse call JsonParse()
 
 function! JsonStringify ()
-  call feedkeys("gsj")  
+  if exists(':Jdaddy')
+    call feedkeys("gsj")  
+  endif
 endfunction
 
 command! JsonStringify call JsonStringify()
@@ -363,6 +371,7 @@ let g:ale_fixers['vue'] = ['volar', 'eslint']
 let g:ale_fixers['yaml'] = ['yamlfix']
 let g:ale_fixers['yml'] = ['yamlfix']
 let g:ale_linters['css'] = ['stylelint', 'eslint']
+let g:ale_linters['glsl'] = ['glslang']
 let g:ale_linters['go'] = ['gobuild', 'golangserver', 'gofmt', 'gopls', 'govert']
 let g:ale_linters['graphql'] = ['eslint', 'gqlint']
 let g:ale_linters['html'] = ['tidy', 'stylelint']
@@ -377,3 +386,7 @@ let g:ale_linters['vue'] = ['volar', 'eslint']
 let g:ale_linters['yaml'] = ['circleci', 'spectral', 'yamllint']
 let g:ale_linters['yml'] = ['circleci', 'spectral', 'yamllint']
 let g:ale_linters_ignore['javascript'] = ['flow']
+
+" Set glslangValidator options (adjust as needed)
+" For OpenGL ES 3.0 shaders:
+let g:ale_glsl_glslang_options = '-S vert --target-env opengl'  " Fixed GLSL validation
